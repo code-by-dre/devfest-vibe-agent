@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DevFest Vibe Lounge Agent</title>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; height: 100dvh; }
+    .app { width: 100%; max-width: 600px; display: flex; flex-direction: column; height: 100%; background: #1e293b; }
+    header { padding: 16px; background: #0284c7; font-weight: 700; font-size: 1.1rem; text-align: center; }
+    #messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .msg { padding: 12px 14px; border-radius: 12px; max-width: 85%; line-height: 1.4; word-wrap: break-word; }
+    .user { background: #0284c7; align-self: flex-end; }
+    .bot { background: #334155; align-self: flex-start; }
+    form { display: flex; padding: 12px; gap: 8px; background: #0f172a; }
+    input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #1e293b; color: white; font-size: 16px; }
+    button { padding: 12px 18px; border-radius: 8px; border: none; background: #38bdf8; color: #0f172a; font-weight: 700; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>DevFest Vibe Lounge Agent</header>
+    <div id="messages">
+      <div class="msg bot">Hi! Ask me about DevFest Vibe Lounge stations (1–10) or low-data Sandton commuter tips.</div>
+    </div>
+    <form id="chat-form">
+      <input id="prompt" type="text" placeholder="Ask about Station 1 status..." required autocomplete="off" />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+  <script>
+    const sessionId = crypto.randomUUID();
+    const messages = document.getElementById("messages");
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("prompt");
+
+    function addMsg(text, cls) {
+      const div = document.createElement("div");
+      div.className = `msg ${cls}`;
+      div.textContent = text;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      addMsg(text, "user");
+      input.value = "";
+      try {
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sessionId, message: text })
+        });
+        const data = await res.json();
+        addMsg(data.reply || data.detail, "bot");
+      } catch {
+        addMsg("Connection error. Please try again.", "bot");
+      }
+    });
+  </script>
+</body>
+</html>
